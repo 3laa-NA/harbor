@@ -1,0 +1,29 @@
+name: Sync fork with upstream
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.repository != 'harborstremio/harbor'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [main, beta-branch]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+      - name: Fast-forward from upstream
+        run: |
+          git remote add upstream https://github.com/harborstremio/harbor.git
+          git fetch upstream "${{ matrix.branch }}"
+          git merge --ff-only "upstream/${{ matrix.branch }}"
+          git push origin "${{ matrix.branch }}"
